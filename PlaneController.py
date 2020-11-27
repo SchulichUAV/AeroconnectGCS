@@ -9,6 +9,7 @@ class PlaneController():
         self.received_message_queue = Queue() # Messages received from the plane
         self.send_message_queue = Queue()
         self.server_jobs_queue = Queue() # List of jobs received from server
+        self.acks = Queue() # Queue of acks to consume I guess?
 
         self.current_command = None
         self.next_command_condition = None # Are we ready for the next command?
@@ -16,13 +17,20 @@ class PlaneController():
         self.next_job_condition = None # Are we ready for the next job?
     
     def run(self):
-        # Threads we need to run are
+        # Pipeline for sending jobs out is
         # heartbeat
         # get_new_jobs (polls the server)
+        # handle_server_responses (actual logic to put them in the right queue)
+        # parse_jobs : parses job responses
+        # check_command_done : check if the exit condition is met and if so get current_cmd from the command queue
+        #   If the whole job is done we can get a new job
+
+        # In parallel we have
         # get_plane_stats (poll planes for params or whatever)
         # post_plane_stats (send plane stats to the server)
-        # check_command_done : check if the exit condition is met and if so get current_cmd from the command queue
-        # check_job_done : check if the current job is done and if so grab the next one - needs to convert it to commands
+
+        # And
+        # send_plane_commands : read commands from the list and send them consume an ack if required
         # parse_commands : parsed the received commands queue for stats about the plane
         # handle_plane_commands : parse messages received from plane
         pass
