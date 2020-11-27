@@ -5,9 +5,10 @@ class PlaneController():
         # Queues are used to pass information in a threadsafe way from produces to consumers
         self.job_queue = PriorityQueue() # Priority queues are threadsafe so we don't need the workaround
         self.command_exit_queue = PriorityQueue() # List of commands and exit conditions. Exit conditions can be lambda function
+
         self.received_message_queue = Queue() # Messages received from the plane
         self.send_message_queue = Queue()
-        self.server_jobs_queueu = Queue() # List of jobs received from server
+        self.server_jobs_queue = Queue() # List of jobs received from server
 
         self.current_command = None
         self.next_command_condition = None # Are we ready for the next command?
