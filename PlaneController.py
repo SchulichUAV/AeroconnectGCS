@@ -1,4 +1,5 @@
 # /usr/bin/env python3
+import Messages
 import time
 import threading
 
@@ -34,12 +35,12 @@ class PlaneController():
     def heartbeat_loop(self):
         """Send a heartbeat to the autopilot once every second"""
         while True:
-            self.command_queue.put((self.autopilot.mav.heartbeat_send, (6, 8, 102, 0, 4, 3)))    
+            # self.command_queue.put()    
             time.sleep(1)
 
     def send_commands_loop(self):
         """Get commands from the queue and send them to the plane"""
-        func, args = self.command_queue.get()
+        func, args = self.command_queue.get()   
         func(args)
 
     def run(self):
