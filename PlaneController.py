@@ -6,13 +6,16 @@ from queue import PriorityQueue, Queue
 
 class PlaneController():
     def __init__(self, autopilot, server_address):
+        """Initialize a PlaneController and start up it's threads
+        - autopilot : pymavlink autpilot connection
+        - server_address : address of server we get jobs from
+        """
         print("Setting up controller")
         self.autopilot = autopilot
         self.server_address = server_address
         # Queues are used to pass information in a threadsafe way from produces to consumers
         self.job_queue = PriorityQueue() # Priority queues are threadsafe so we don't need the workaround
         self.command_exit_queue = PriorityQueue() # List of commands and exit conditions. Exit conditions can be lambda function
-
         self.received_message_queue = Queue() # Messages received from the plane
         self.send_message_queue = Queue()
         self.server_jobs_queue = Queue() # List of jobs received from server
@@ -27,12 +30,13 @@ class PlaneController():
         self.heartbeat_thread = threading.Thread(target=self.heartbeat_loop, daemon=True)
     
     def heartbeat_loop(self):
-        """Send a heartbeat to the autopilot"""
+        """Send a heartbeat to the autopilot one every second"""
         while True:
             self.autopilot.mav.heartbeat_send(6, 8, 102, 0, 4, 3)
             time.sleep(1)
 
     def run(self):
+        """Run all the threads and then go into an infinite loop"""
         # Pipeline for sending jobs out is
 
         # get_new_jobs (polls the server)
