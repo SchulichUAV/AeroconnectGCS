@@ -32,9 +32,9 @@ class PlaneController():
         self.heartbeat_thread = threading.Thread(target=self.heartbeat_loop, daemon=True)
     
     def heartbeat_loop(self):
-        """Send a heartbeat to the autopilot one every second"""
+        """Send a heartbeat to the autopilot once every second"""
         while True:
-            self.command_queue.put(self.autopilot.mav.heartbeat_send, (6, 8, 102, 0, 4, 3))    
+            self.command_queue.put((self.autopilot.mav.heartbeat_send, (6, 8, 102, 0, 4, 3)))    
             time.sleep(1)
 
     def send_commands_loop(self):
