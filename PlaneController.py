@@ -20,6 +20,8 @@ class PlaneController():
         self.send_message_queue = Queue()
         self.server_jobs_queue = Queue() # List of jobs received from server
         self.acks = Queue() # Queue of acks to be fulfilled?
+
+        self.command_queue = PriorityQueue()
         
         self.current_command = None
         self.next_command_condition = None # Are we ready for the next command?
@@ -30,10 +32,15 @@ class PlaneController():
         self.heartbeat_thread = threading.Thread(target=self.heartbeat_loop, daemon=True)
     
     def heartbeat_loop(self):
-        """Send a heartbeat to the autopilot one every second"""
+        """Send a heartbeat to the autopilot once every second"""
         while True:
-            self.autopilot.mav.heartbeat_send(6, 8, 102, 0, 4, 3)
+            self.command_queue.put((self.autopilot.mav.heartbeat_send, (6, 8, 102, 0, 4, 3)))    
             time.sleep(1)
+
+    def send_commands_loop(self):
+        """Get commands from the queue and send them to the plane"""
+        func, args = self.command_queue.get()
+        func(args)
 
     def run(self):
         """Run all the threads and then go into an infinite loop"""
