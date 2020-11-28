@@ -1,3 +1,5 @@
+from queue import PriorityQueue, Queue
+
 class PlaneController():
     def __init__(self, autopilot, server_address):
         self.autopilot = autopilot
