@@ -38,6 +38,7 @@ class PlaneController():
             time.sleep(1)
 
     def send_commands_loop(self):
+        """Get commands from the queue and send them to the plane"""
         func, args = self.command_queue.get()
         func(args)
 
