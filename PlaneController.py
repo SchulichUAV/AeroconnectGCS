@@ -1,23 +1,28 @@
 # /usr/bin/env python3
 import time
 import threading
+
 from queue import PriorityQueue, Queue
 
 from Messages import *
+from PriorityLevels import *
 
 # Define a global mav in this file to access the functions we need
 
 mav = mavutil.mavlink.MAVLink
 
 class PlaneController():
-    def __init__(self, autopilot, server_address):
+    def __init__(self, autopilot, server_address, debug=True):
         """Initialize a PlaneController and start up it's threads
         - autopilot : pymavlink autpilot connection
         - server_address : address of server we get jobs from
         """
         print("Setting up controller")
+        # Attributes
         self.autopilot = autopilot
         self.server_address = server_address
+        self.debug = debug
+
         # Queues are used to pass information in a threadsafe way from produces to consumers
         self.job_queue = PriorityQueue() # Priority queues are threadsafe so we don't need the workaround
         self.command_exit_queue = PriorityQueue() # List of commands and exit conditions. Exit conditions can be lambda function
@@ -35,18 +40,22 @@ class PlaneController():
 
         print("Setting up threads")
         self.heartbeat_thread = threading.Thread(target=self.heartbeat_loop, daemon=True)
+        self.command_thread = threading.Thread(target=self.send_commands_loop, daemon=True)
     
     def heartbeat_loop(self):
         """Send a heartbeat to the autopilot once every second"""
         while True:
             # The MAVLink class will be implicitly imported
-            self.command_queue.put(Heartbeat(self.autopilot))
+            self.command_queue.put(PrioritizedItem(heartbeat_pri, Heartbeat(self.autopilot)) )
             time.sleep(1)
 
     def send_commands_loop(self):
-        """Get commands from the queue and send them to the plane"""
-        command = self.command_queue.get()
-        command.send()
+        while True:
+            """Get commands from the queue and send them to the plane"""
+            command = self.command_queue.get().item
+            if self.debug:
+                print(command)
+            command.send()
 
     def run(self):
         """Run all the threads and then go into an infinite loop"""
@@ -70,6 +79,7 @@ class PlaneController():
 
         print("Running")
         self.heartbeat_thread.start()
+        self.command_thread.start()
 
         while True:
             pass
