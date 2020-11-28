@@ -1,9 +1,13 @@
 # /usr/bin/env python3
-import Messages
 import time
 import threading
-
 from queue import PriorityQueue, Queue
+
+from Messages import *
+
+# Define a global mav in this file to access the functions we need
+
+mav = mavutil.mavlink.MAVLink
 
 class PlaneController():
     def __init__(self, autopilot, server_address):
@@ -35,13 +39,14 @@ class PlaneController():
     def heartbeat_loop(self):
         """Send a heartbeat to the autopilot once every second"""
         while True:
-            # self.command_queue.put()    
+            # The MAVLink class will be implicitly imported
+            self.command_queue.put(Heartbeat(self.autopilot))
             time.sleep(1)
 
     def send_commands_loop(self):
         """Get commands from the queue and send them to the plane"""
-        func, args = self.command_queue.get()   
-        func(args)
+        command = self.command_queue.get()
+        command.send()
 
     def run(self):
         """Run all the threads and then go into an infinite loop"""
