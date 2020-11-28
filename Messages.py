@@ -1,12 +1,8 @@
 #! /usr/bin/env python3
-# Commonly used messages
+# Utility classes for commonly used messages
 
-from Jobs import Message
+from Jobs import MessageJob
 
-class Message():
-    def __init__(self, connection, *args):
-        self.connection = connection
-        self.args = args
-
-def heartbeat_message(autopilot):
-    return Message(autopilot.mav.heartbeat_send, (6, 8, 102, 0, 4, 3))
+class Heartbeat(MessageJob):
+    def __init__(self, connection):
+        super(connection, 6, 8, 102, 0, 4, 3)
