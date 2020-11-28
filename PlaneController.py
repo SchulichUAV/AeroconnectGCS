@@ -18,9 +18,14 @@ class PlaneController():
         self.current_job = None
         self.next_job_condition = None # Are we ready for the next job?
     
+    def heartbeat_loop(self):
+        pass
+    
     def run(self):
+        # Heartbeat - this is just a normal heartbeat function
+
         # Pipeline for sending jobs out is
-        # heartbeat
+
         # get_new_jobs (polls the server)
         # handle_server_responses (actual logic to put them in the right queue)
         # parse_jobs : parses job responses
