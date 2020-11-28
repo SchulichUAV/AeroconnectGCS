@@ -17,4 +17,7 @@ def run(plane_address, server_address):
     plane_controller.run()
 
 if __name__ == "__main__":
-    run('tcp:localhost:5763', "tbd")
+    try:
+        run('tcp:localhost:5763', "tbd")
+    except KeyboardInterrupt:
+        print("\nExiting...\n")

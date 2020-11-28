@@ -1,7 +1,12 @@
+# /usr/bin/env python3
+import time
+import threading
+
 from queue import PriorityQueue, Queue
 
 class PlaneController():
     def __init__(self, autopilot, server_address):
+        print("Setting up controller")
         self.autopilot = autopilot
         self.server_address = server_address
         # Queues are used to pass information in a threadsafe way from produces to consumers
@@ -11,19 +16,23 @@ class PlaneController():
         self.received_message_queue = Queue() # Messages received from the plane
         self.send_message_queue = Queue()
         self.server_jobs_queue = Queue() # List of jobs received from server
-        self.acks = Queue() # Queue of acks to consume I guess?
-
+        self.acks = Queue() # Queue of acks to be fulfilled?
+        
         self.current_command = None
         self.next_command_condition = None # Are we ready for the next command?
         self.current_job = None
         self.next_job_condition = None # Are we ready for the next job?
+
+        print("Setting up threads")
+        self.heartbeat_thread = threading.Thread(target=self.heartbeat_loop, daemon=True)
     
     def heartbeat_loop(self):
-        pass
-    
-    def run(self):
-        # Heartbeat - this is just a normal heartbeat function
+        """Send a heartbeat to the autopilot"""
+        while True:
+            self.autopilot.mav.heartbeat_send(6, 8, 102, 0, 4, 3)
+            time.sleep(1)
 
+    def run(self):
         # Pipeline for sending jobs out is
 
         # get_new_jobs (polls the server)
@@ -39,5 +48,13 @@ class PlaneController():
         # And
         # send_plane_commands : read commands from the list and send them consume an ack if required
         # parse_commands : parsed the received commands queue for stats about the plane
-        # handle_plane_commands : parse messages received from plane
+        # handle_plane_commands : parse messages received from plane        
+        # Heartbeat - this is just a normal heartbeat function
+
+        print("Running")
+        self.heartbeat_thread.start()
+
+        while True:
+            pass
+
         pass
