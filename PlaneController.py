@@ -7,10 +7,6 @@ from queue import PriorityQueue, Queue
 from Messages import *
 from PriorityLevels import *
 
-# Define a global mav in this file to access the functions we need
-
-mav = mavutil.mavlink.MAVLink
-
 class PlaneController():
     def __init__(self, autopilot, server_address, debug=True):
         """Initialize a PlaneController and start up it's threads

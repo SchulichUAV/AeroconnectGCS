@@ -2,11 +2,7 @@
 # Utility classes for commonly used messages
 
 from Jobs import MessageJob
-from pymavlink import mavutil
-mavutil.set_dialect("common")
-
-# Provides access to teh MAVLink functions to send messages
-mav = mavutil.mavlink.MAVLink
+from MavlinkInterface import mav
 
 class Heartbeat(MessageJob):
     def __init__(self, connection):

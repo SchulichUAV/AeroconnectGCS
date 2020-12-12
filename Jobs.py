@@ -2,8 +2,6 @@
 # Define our data structures related to sending out jobs to the plane
 
 from queue import Queue
-from pymavlink import mavutil
-mavutil.set_dialect("common")
 
 class MessageJob():
     """Class to represent mavlink message we have to send"""
