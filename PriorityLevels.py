@@ -9,3 +9,4 @@ class PrioritizedItem:
     item: Any=field(compare=False)
 
 heartbeat_pri = 2
+stream_pri = 1

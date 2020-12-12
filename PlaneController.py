@@ -4,6 +4,7 @@ import threading
 
 from queue import PriorityQueue, Queue
 
+from MavlinkInterface import *
 from Messages import *
 from PriorityLevels import *
 
@@ -28,16 +29,35 @@ class PlaneController():
         self.acks = Queue() # Queue of acks to be fulfilled?
 
         self.command_queue = PriorityQueue()
+        self.stat = {} # Keep track of planes stats
         
         self.current_command = None
         self.next_command_condition = None # Are we ready for the next command?
         self.current_job = None
         self.next_job_condition = None # Are we ready for the next job?
 
+        self.init_data_streams() # Subscribe to location information
+    
         print("Setting up threads")
         self.heartbeat_thread = threading.Thread(target=self.heartbeat_loop, daemon=True)
-        self.command_thread = threading.Thread(target=self.send_commands_loop, daemon=True)
+        self.send_command_thread = threading.Thread(target=self.send_commands_loop, daemon=True)
+        self.read_command_thread = threading.Thread(target=self.read_commands_loop, daemon=True)
     
+    def init_data_streams(self):
+        """We need to send mav commands to initiate the datastreams we wants"""
+        gps_request = StreamRequest(
+            self.autopilot, 
+            mavutil.mavlink.MAVLINK_MSG_ID_GLOBAL_POSITION_INT,
+            interval=1e6
+        )
+        # Test request for params
+        # param_request = MessageJob(
+        #     mav.param_request_list_send,
+        #     self.autopilot, 0,0
+        # )
+        self.command_queue.put(PrioritizedItem(stream_pri, gps_request))
+        # self.command_queue.put(PrioritizedItem(1, param_request))
+
     def heartbeat_loop(self):
         """Send a heartbeat to the autopilot once every second"""
         while True:
@@ -50,8 +70,21 @@ class PlaneController():
             """Get commands from the queue and send them to the plane"""
             command = self.command_queue.get().item
             if self.debug:
-                print(command)
+                print(f"Send: {command}")
             command.send()
+
+    def stat_loop(self):
+        """Collect parameters from the plane"""
+        pass
+        
+    def read_commands_loop(self):
+        """Read mavlink messages from the plane"""
+        while True:
+            msg = self.autopilot.recv_msg()
+            if self.debug and msg:
+                print(f"Receive: {msg}")
+            # TODO Handle messages based on type
+            time.sleep(0.1)
 
     def run(self):
         """Run all the threads and then go into an infinite loop"""
@@ -75,7 +108,8 @@ class PlaneController():
 
         print("Running")
         self.heartbeat_thread.start()
-        self.command_thread.start()
+        self.send_command_thread.start()
+        self.read_command_thread.start()
 
         while True:
             pass
