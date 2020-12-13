@@ -11,7 +11,13 @@ class Heartbeat(MessageJob):
         return "Heartbeat"
 
 class StreamRequest(MessageJob):
+    """Request a mesage to be regularly sent from the autopilot."""
     def __init__(self, connection, message, interval : int):
+        """
+        connection - connection to send request to
+        message - id of the message to request
+        interval - interval between messages in microseconds (us)
+        """
         super().__init__(
             mav.command_long_send, connection, 0, 0, 
             mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL, 0, 

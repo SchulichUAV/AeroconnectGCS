@@ -29,7 +29,6 @@ class PlaneController():
         self.acks = Queue() # Queue of acks to be fulfilled?
 
         self.command_queue = PriorityQueue()
-        self.stat = {} # Keep track of planes stats
         
         self.current_command = None
         self.next_command_condition = None # Are we ready for the next command?
@@ -50,13 +49,7 @@ class PlaneController():
             mavutil.mavlink.MAVLINK_MSG_ID_GLOBAL_POSITION_INT,
             interval=1e6
         )
-        # Test request for params
-        # param_request = MessageJob(
-        #     mav.param_request_list_send,
-        #     self.autopilot, 0,0
-        # )
         self.command_queue.put(PrioritizedItem(stream_pri, gps_request))
-        # self.command_queue.put(PrioritizedItem(1, param_request))
 
     def heartbeat_loop(self):
         """Send a heartbeat to the autopilot once every second"""
@@ -72,10 +65,6 @@ class PlaneController():
             if self.debug:
                 print(f"Send: {command}")
             command.send()
-
-    def stat_loop(self):
-        """Collect parameters from the plane"""
-        pass
         
     def read_commands_loop(self):
         """Read mavlink messages from the plane"""
@@ -113,5 +102,3 @@ class PlaneController():
 
         while True:
             pass
-
-        pass
