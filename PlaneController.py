@@ -36,6 +36,11 @@ class PlaneController():
         self.next_job_condition = None # Are we ready for the next job?
 
         self.init_data_streams() # Subscribe to location information
+        self.handlers = self.register_handlers()
+
+        # Status variables
+        self.lat = None
+        self.lon = None
     
         print("Setting up threads")
         self.heartbeat_thread = threading.Thread(target=self.heartbeat_loop, daemon=True)
@@ -50,6 +55,23 @@ class PlaneController():
             interval=1e6
         )
         self.command_queue.put(PrioritizedItem(stream_pri, gps_request))
+
+    def register_handlers(self):
+        """This tells us the default way to handle each message
+        Return - dictionary of format <mesage id, handler>"""
+        return {
+            mavutil.mavlink.MAVLINK_MSG_ID_GLOBAL_POSITION_INT : 
+            self.handle_position,
+        }
+
+    def handle_position(self, msg):
+        """Handle messages of type MAVLINK_MSG_ID_GLOBAL_POSITION_INT"""
+        # For some reason message contains latitude and longitude times 1e7
+        lat, lon = msg.lat/1e7, msg.lon/1e7
+        if self.debug:
+            print(f"Recorded position ({lat},{lon})")
+        self.lat = lat
+        self.lon = lon
 
     def heartbeat_loop(self):
         """Send a heartbeat to the autopilot once every second"""
@@ -67,12 +89,18 @@ class PlaneController():
             command.send()
         
     def read_commands_loop(self):
-        """Read mavlink messages from the plane"""
+        """Read mavlink messages from the plane and dispatch to the approriate 
+        handler"""
         while True:
             msg = self.autopilot.recv_msg()
-            if self.debug and msg:
-                print(f"Receive: {msg}")
-            # TODO Handle messages based on type
+            if msg:
+                if self.debug: print(f"Receive: {msg}")
+                if msg.id in self.handlers:
+                    handle_thread = threading.Thread(
+                        target=self.handlers[msg.id],
+                        args=(msg,)
+                    )
+                    handle_thread.start()
             time.sleep(0.1)
 
     def run(self):
