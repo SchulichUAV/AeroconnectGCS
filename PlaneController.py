@@ -1,6 +1,8 @@
 # /usr/bin/env python3
+import requests
 import time
 import threading
+from urllib.parse import urljoin
 
 from queue import PriorityQueue, Queue
 
@@ -9,13 +11,15 @@ from Messages import *
 from PriorityLevels import *
 
 class PlaneController():
-    def __init__(self, autopilot, server_address, debug=True):
+    def __init__(self, id : int, autopilot, server_address, debug=True):
         """Initialize a PlaneController and start up it's threads
+        - id : id of the plane in the database
         - autopilot : pymavlink autpilot connection
         - server_address : address of server we get jobs from
         """
         print("Setting up controller")
         # Attributes
+        self.id = id
         self.autopilot = autopilot
         self.server_address = server_address
         self.debug = debug
@@ -35,6 +39,7 @@ class PlaneController():
         self.current_job = None
         self.next_job_condition = None # Are we ready for the next job?
 
+        self.register_with_server()
         self.init_data_streams() # Subscribe to location information
         self.handlers = self.register_handlers()
 
@@ -46,6 +51,17 @@ class PlaneController():
         self.heartbeat_thread = threading.Thread(target=self.heartbeat_loop, daemon=True)
         self.send_command_thread = threading.Thread(target=self.send_commands_loop, daemon=True)
         self.read_command_thread = threading.Thread(target=self.read_commands_loop, daemon=True)
+    
+    def register_with_server(self):
+        """Ask the server if a plane exists with our id. If it does not we will
+        create it"""
+        planes_url = urljoin(self.server_address,"planes/")
+        r = requests.get(planes_url)
+        if self.debug:
+            print(r.url)
+            print(r.text)
+        if not self.id in [plane["id"] for plane in r.json()]:
+            r = requests.post(planes_url, json={"id":self.id})
     
     def init_data_streams(self):
         """We need to send mav commands to initiate the datastreams we wants"""
