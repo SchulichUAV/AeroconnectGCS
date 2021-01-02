@@ -8,5 +8,6 @@ class PrioritizedItem:
     priority: int
     item: Any=field(compare=False)
 
-heartbeat_pri = 2
+heartbeat_pri = 3
 stream_pri = 1
+nav_pri = 2

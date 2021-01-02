@@ -18,3 +18,4 @@ class MessageJob():
     def send(self):
         """Send this job"""
         self.func(self.connection.mav, *self.args)
+        
