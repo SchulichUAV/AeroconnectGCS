@@ -4,7 +4,8 @@ from PlaneController import PlaneController
 from MavlinkInterface import *
 
 def run(id, plane_address, server_address):
-    """Starts a loop that will handle the communication tasks required of the plane
+    """Starts a loop that will handle the communication tasks required of the 
+    plane
     - plane_address : address of the PixHawk
     - sevrer_address : address of the server to make requests to
     """
