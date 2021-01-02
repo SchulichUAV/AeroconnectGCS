@@ -3,10 +3,10 @@ import Modes
 import requests
 import time
 import threading
-from urllib.parse import urljoin
 
-from queue import PriorityQueue, Queue
 from haversine import haversine, Unit
+from queue import PriorityQueue, Queue
+from urllib.parse import urljoin
 
 from MavlinkInterface import *
 from Messages import *
@@ -28,14 +28,8 @@ class PlaneController():
         self.server_address = server_address
         self.debug = debug
 
-        # Queues are used to pass information in a threadsafe way from produces to consumers
-        self.job_queue = PriorityQueue() # Priority queues are threadsafe so we don't need the workaround
-        self.command_exit_queue = PriorityQueue() # List of commands and exit conditions. Exit conditions can be lambda function
-        self.received_message_queue = Queue() # Messages received from the plane
-        self.send_message_queue = Queue()
-        self.server_jobs_queue = Queue() # List of jobs received from server
-        self.acks = Queue() # Queue of acks to be fulfilled?
-
+        # Queues are used to pass information in a threadsafe way from producers
+        # to consumers
         self.command_queue = PriorityQueue()
 
         self.register_with_server()
@@ -62,21 +56,18 @@ class PlaneController():
         self.current_stage = None
     
         print("Setting up threads")
-        self.heartbeat_thread = threading.Thread(target=self.heartbeat_loop, daemon=True)
-        self.send_command_thread = threading.Thread(target=self.send_commands_loop, daemon=True)
-        self.read_command_thread = threading.Thread(target=self.read_commands_loop, daemon=True)
-        self.update_waypoint_thread = threading.Thread(target=self.update_waypoint_loop, daemon=True)
+        self.heartbeat_thread = \
+            threading.Thread(target=self.heartbeat_loop, daemon=True)
+        self.send_command_thread = \
+            threading.Thread(target=self.send_commands_loop, daemon=True)
+        self.read_command_thread = \
+            threading.Thread(target=self.read_commands_loop, daemon=True)
+        self.update_waypoint_thread = \
+            threading.Thread(target=self.update_waypoint_loop, daemon=True)
 
-    # Utils
-
-    def distance_to(self, waypoint):
-        """
-        Return the distance to the waypoint in meters using the haversine
-        formula.
-        """
-        current_loc = (self.lat, self.lon)
-        waypoint_loc = (waypoint.get_lat(), waypoint.get_lon())
-        return haversine(current_loc, waypoint_loc, unit=Unit.METERS)
+################################################################################
+# Setup functions
+################################################################################
 
     def register_with_server(self):
         """Ask the server if a plane exists with our id. If it does not we will
@@ -120,6 +111,10 @@ class PlaneController():
             self.handle_extended_sys_state,
         }
 
+################################################################################
+# Handlers - handle messages received from the plane
+################################################################################
+
     def handle_position(self, msg):
         """Handle messages of type MAVLINK_MSG_ID_GLOBAL_POSITION_INT"""
         # For some reason lat and lon in the message are multiplied by 1e7
@@ -141,6 +136,19 @@ class PlaneController():
     def handle_extended_sys_state(self, msg):
         self.flightstage = msg.landed_state
 
+################################################################################
+# Nav functions
+################################################################################
+
+    def distance_to(self, waypoint):
+        """
+        Return the distance to the waypoint in meters using the haversine
+        formula.
+        """
+        current_loc = (self.lat, self.lon)
+        waypoint_loc = (waypoint.get_lat(), waypoint.get_lon())
+        return haversine(current_loc, waypoint_loc, unit=Unit.METERS)
+
     def get_new_instruction(self):
         """Moves the mission along"""
         if self.instructions.empty():
@@ -159,7 +167,7 @@ class PlaneController():
                 self.command_queue.put(PrioritizedItem(nav_pri, command))
 
     def generate_waypoint_instructions(self, waypoint : Waypoint):
-        """Generates instructions to go to a certain waypoint"""
+        """Generates instructions to go to the given waypoint"""
         return [
             WaypointStage(
                 WaitJob(), lambda : self.loaded
@@ -185,11 +193,17 @@ class PlaneController():
             )
         ]
 
+################################################################################
+# Loops - each loop is started by a separate thread
+################################################################################
+
     def heartbeat_loop(self):
         """Send a heartbeat to the autopilot once every second"""
         while True:
             # The MAVLink class will be implicitly imported
-            self.command_queue.put(PrioritizedItem(heartbeat_pri, Heartbeat(self.autopilot)) )
+            self.command_queue.put(
+                PrioritizedItem(heartbeat_pri, Heartbeat(self.autopilot))
+                )
             time.sleep(1)
 
     def send_commands_loop(self):
@@ -225,23 +239,6 @@ class PlaneController():
 
     def run(self):
         """Run all the threads and then go into an infinite loop"""
-        # Pipeline for sending jobs out is
-
-        # get_new_jobs (polls the server)
-        # handle_server_responses (actual logic to put them in the right queue)
-        # parse_jobs : parses job responses
-        # check_command_done : check if the exit condition is met and if so get current_cmd from the command queue
-        #   If the whole job is done we can get a new job
-
-        # In parallel we have
-        # get_plane_stats (poll planes for params or whatever)
-        # post_plane_stats (send plane stats to the server)
-
-        # And
-        # send_plane_commands : read commands from the list and send them consume an ack if required
-        # parse_commands : parsed the received commands queue for stats about the plane
-        # handle_plane_commands : parse messages received from plane        
-        # Heartbeat - this is just a normal heartbeat function
         if self.debug:
             self.waypoints.put(Waypoint(51.0455656,-114.07079236))
             self.waypoints.put(Waypoint(51.1455656,-114.17079236))
