@@ -8,7 +8,12 @@ Aeroconnect GCS was designed as part of the [SAE AeroConnect 2021 Challenge](htt
 Note that GCS is a bit of a misnomer since this software is running on the plane, not on a ground control station.
 ## Getting started
 To get an idea of how the software works you can use [SITL](https://ardupilot.org/dev/docs/sitl-simulator-software-in-the-loop.html) to simulate an aircraft. Before following the steps below, make sure you understand and can use SITL.
-
+# Dependencies
+```
+pip3 install haversine
+pip3 install pymavlink
+```
+# Running in SITL
 In a terminal start SITL
 ```
 cd ardupilot/ArduCopter
