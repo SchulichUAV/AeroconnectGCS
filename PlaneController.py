@@ -122,7 +122,8 @@ class PlaneController():
 
     def handle_position(self, msg):
         """Handle messages of type MAVLINK_MSG_ID_GLOBAL_POSITION_INT"""
-        # For some reason positional values in the message are multiplied by 1e7
+        # For some reason lat and lon in the message are multiplied by 1e7
+        # and altitude by 1e3
         lat, lon, relative_alt = msg.lat/1e7, msg.lon/1e7, msg.relative_alt/1e3
         if self.debug:
             print(f"Recorded position ({lat},{lon})")
