@@ -46,11 +46,14 @@ class PlaneController():
         self.lat = None
         self.lon = None
         self.relative_alt = 0
-        self.waypoint_reached = False
         self.armed = False
-        # In an actual system we would have a button or something
+        # In an actual system we would have a button or something to let us know
+        # when passengers have been loaded
         self.loaded = True
-        self.flightstage = None # Same as the "landed" attribute in ardupilot
+        # Same as the "landed_state" attribute in ardupilot we use a different 
+        # name here because confusingly landed_state could be "in_air" or 
+        # "taking off"
+        self.flightstage = None
 
         # Waypoint completion variables
         self.waypoints = Queue() # List of waypoints to visit
@@ -93,11 +96,6 @@ class PlaneController():
             mavutil.mavlink.MAVLINK_MSG_ID_GLOBAL_POSITION_INT,
             interval=1e6
         )
-        mission_reached = StreamRequest(
-            self.autopilot,
-            mavutil.mavlink.MAVLINK_MSG_ID_MISSION_ITEM_REACHED,
-            interval=1e6
-        )
         extended_sys_request = StreamRequest(
             self.autopilot,
             mavutil.mavlink.MAVLINK_MSG_ID_EXTENDED_SYS_STATE,
@@ -105,9 +103,6 @@ class PlaneController():
         )
         self.command_queue.put(
             PrioritizedItem(stream_pri, gps_request)
-        )
-        self.command_queue.put( 
-            PrioritizedItem(stream_pri, mission_reached)
         )
         self.command_queue.put(
             PrioritizedItem(stream_pri, extended_sys_request)
@@ -119,8 +114,6 @@ class PlaneController():
         return {
             mavutil.mavlink.MAVLINK_MSG_ID_GLOBAL_POSITION_INT : 
             self.handle_position,
-            mavutil.mavlink.MAVLINK_MSG_ID_MISSION_ITEM_REACHED :
-            self.handle_waypoint_reached,
             mavutil.mavlink.MAVLINK_MSG_ID_HEARTBEAT :
             self.handle_heartbeat,
             mavutil.mavlink.MAVLINK_MSG_ID_EXTENDED_SYS_STATE :
@@ -136,10 +129,6 @@ class PlaneController():
         self.lat = lat
         self.lon = lon
         self.relative_alt = relative_alt
-
-    def handle_waypoint_reached(self, msg):
-        """Handle MISSION_ITEM_REACHED"""
-        self.waypoint_reached = True
 
     def handle_heartbeat(self, msg):
         # Heartbeat contains mode information
@@ -157,7 +146,6 @@ class PlaneController():
             if self.debug: print("Getting waypoint")
             self.next_waypoint = self.waypoints.get()
             if self.debug: print("Got waypoint")
-            self.waypoint_reached = False
             new_instructions = \
                 self.generate_waypoint_instructions(self.next_waypoint)
             for instruction in new_instructions:

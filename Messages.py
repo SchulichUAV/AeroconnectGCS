@@ -52,6 +52,7 @@ class Arm(MessageJob):
         super().__init__(
             mav.command_long_send, connection, 0, 0,
             mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM,
+            # The 1 here indicates ARM. 0 would mean disarm
             0, 1, 0, 0, 0, 0, 0, 0
         )
     def __repr__(self):
@@ -71,14 +72,14 @@ class Takeoff(MessageJob):
         return f"Take off {self.altitude}"
 
 class FlyTo(MessageJob):
-    """Presuming we have taken off fly to this location"""
+    """Presuming we have taken off fly to this location and altitude"""
     def __init__(self, connection, waypoint : Waypoint, altitude):
         super().__init__(
             mav.mission_item_int_send, connection, 0, 0, 0,
             mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT, 
             mavutil.mavlink.MAV_CMD_NAV_WAYPOINT, 2, 0, 0, 0, 0, 0, 
             int(waypoint.lat*1e7), int(waypoint.lon*1e7), 
-            # Multiply by 1.0e7 because of that weird bug
+            # Multiply by 1.0e7 because ardupilot expects an int
             altitude
         )
         self.altitude = altitude
