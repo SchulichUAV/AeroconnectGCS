@@ -15,7 +15,7 @@ from PriorityLevels import *
 from Waypoint import *
 
 class PlaneController():
-    def __init__(self, id : int, autopilot, server_address, debug=True):
+    def __init__(self, id : int, autopilot, server_address, debug=False):
         """Initialize a PlaneController and start up it's threads
         - id : id of the plane in the database
         - autopilot : pymavlink autpilot connection

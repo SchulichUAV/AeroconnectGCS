@@ -9,7 +9,8 @@ def run(id, plane_address, server_address):
     - sevrer_address : address of the server to make requests to
     """
     autopilot = mavutil.mavlink_connection(plane_address)
-    plane_controller = PlaneController(id, autopilot, server_address)
+    plane_controller = \
+        PlaneController(id, autopilot, server_address, debug=True)
     plane_controller.run()
 
 if __name__ == "__main__":
